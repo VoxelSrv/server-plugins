@@ -16,7 +16,7 @@ configs.save('', 'welcome', load);
 players.event.on('create', function (player) {
 	setTimeout(function () {
 		cfg.forEach(function (text) {
-			player.send(data.id, text);
+			player.send(text);
 		});
 	}, 500);
 });

@@ -2,32 +2,17 @@ export const name = 'Auth';
 export const version = '0.0.2';
 export const supported = '>=0.2.0-alpha.4';
 
-import { players, commands, console, chat } from 'server';
-import * as fs from 'fs';
+import { players, commands, console, chat, configs } from 'server';
 
 const sessions = {};
 
 let playerdata = {};
 
-if (!fs.existsSync('./storage/auth')) fs.mkdirSync('./storage/auth');
-if (!fs.existsSync('./storage/auth/database.json')) {
-	fs.writeFile('./storage/auth/database.json', JSON.stringify({}), function (err) {
-		if (err) console.error([new chat.ChatComponent('Auth - Cant save files! Reason: ' + err, 'red')]);
-	});
-}
-
 function saveDatabase() {
-	fs.writeFile('./storage/auth/database.json', JSON.stringify(playerdata), function (err) {
-		if (err) console.error([new chat.ChatComponent('Auth - Cant save files! Reason: ' + err, 'red')]);
-	});
+	configs.save('storage', 'auth', playerdata);
 }
 
-try {
-	playerdata = require('../../storage/auth/database.json');
-	console.log([new chat.ChatComponent('Loaded password database!', 'green')]);
-} catch (e) {
-	console.error([new chat.ChatComponent(`Can't load database! `, 'red'), new chat.ChatComponent(`Creating a new one...`, '#e6ffba')]);
-}
+playerdata = configs.load('storage', 'auth');
 
 export function isLogged(name) {
 	if (sessions[name] == true) {

@@ -5,8 +5,8 @@ import { Player } from 'server/players';
 import * as api from './api';
 
 export const name = 'WorldEdit';
-export const version = '0.0.1';
-export const supported = '>=0.2.0-beta.3.1';
+export const version = '0.0.2';
+export const supported = '>=0.2.0-beta.4.1';
 export function getAPI() {
 	return api
 }
@@ -47,22 +47,70 @@ players.event.on('player-click-4', (player: players.Player, data) => {
 });
 
 
-function setCommand(executor: Player, args) {
+async function setCommand(executor: Player, args) {
 	if (executor.id == '#console') return;
 
 	const id = executor.id
-	if (executor.permissions.check('worldedit.set') || true) {
-		const block = registry.blockRegistry[args[0]]
+	if (!executor.permissions.check('worldedit.set')) {
+		let block;
+		if (args[0].includes(',')) {
+			block = [];
+			(args[0].split(',')).forEach(e => block.push(registry.blockRegistry[e]));
+		}
+		else block = registry.blockRegistry[args[0]]
+
 		if (block == undefined) {
 			executor.send([new ChatComponent(`Invalid block! ${args[0]} doesn't exist!`, 'red')]);
 			return;
 		}
+
 		api.set(storage[id].p1, storage[id].p2, executor.world, block)
 		executor.send([new ChatComponent(`Done!`, '#00c40')]);
 		return;
 	}
+
 	executor.send([new ChatComponent(`You can't use this command!`, 'red')]);
 
 }
-
 commands.register('/set', setCommand, 'Sets selected region to block.')
+
+async function repCommand(executor: Player, args) {
+	if (executor.id == '#console') return;
+
+	const id = executor.id
+	if (!executor.permissions.check('worldedit.replace')) {
+		let original;
+		if (args[0].includes(',')) {
+			original = [];
+			(args[0].split(',')).forEach(e => original.push(registry.blockRegistry[e]));
+		}
+		else original = registry.blockRegistry[args[0]]
+		
+		if (original == undefined) {
+			executor.send([new ChatComponent(`Invalid block! ${args[0]} doesn't exist!`, 'red')]);
+			return;
+		}
+
+		let block;
+		if (args[1].includes(',')) {
+			block = [];
+			(args[1].split(',')).forEach(e => block.push(registry.blockRegistry[e]));
+		}
+		else block = registry.blockRegistry[args[1]]
+
+		
+		if (block == undefined) {
+			executor.send([new ChatComponent(`Invalid block! ${args[0]} doesn't exist!`, 'red')]);
+			return;
+		}
+
+		api.replace(storage[id].p1, storage[id].p2, executor.world, block, original)
+		executor.send([new ChatComponent(`Done!`, '#00c40')]);
+		return;
+	}
+
+	executor.send([new ChatComponent(`You can't use this command!`, 'red')]);
+
+}
+commands.register('/replace', repCommand, 'Replaces blocks within region.')
+commands.register('/rep', repCommand, 'See /replace')

@@ -2,7 +2,6 @@ import { blockRegistry, Block } from 'server/registry';
 import { World } from 'server/worlds';
 import { XYZ } from '../../src/types';
 import { sendPacketAll } from 'server/players';
-import { TypeSerializer } from 'typedoc/dist/lib/serialization';
 
 export function set(p1: XYZ, p2: XYZ, world: World, block: Block[] | Block) {
 	let getBlock = (): Block => {

@@ -1,7 +1,7 @@
 This is repository of VoxelSrv Server plugins
 
 - Auth: Basic authentication for servers
-- Discord: Connects chat between discord and server
+- Discord: Connects chat between discord and server (Warning! You need to use `npm i discord.js` before usage.)
 - ItemsOnJoin: Gives all items on players join (good for Freebuild)
 - Welcome: Sends player welcoming message
 - WorldEdit - Simple plugin for world-editing

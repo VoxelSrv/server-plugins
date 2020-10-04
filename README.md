@@ -7,5 +7,6 @@ This is repository of VoxelSrv Server plugins
 - WorldEdit: Simple plugin for world-editing
 - ts-example: Example plugin in Typescript
 - playerList: Adds basic player list (press `\`` while on server)
+- mconnect: Allows Minecraft Client to join VoxelSrv server (Warning! You need to use `npm i minecraft-protocol prismarine-chunk` before usage.)
 
 If you want to create new one or add something to existing ones. Feel free to pr!

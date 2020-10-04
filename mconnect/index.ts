@@ -1,5 +1,5 @@
 export const name = 'MConnect';
-export const version = '0.0.1';
+export const version = '0.0.2';
 export const supported = '>=0.2.0-beta.6';
 
 //
@@ -9,22 +9,36 @@ export const supported = '>=0.2.0-beta.6';
 import { getServerInstance } from '../../src/server';
 import { BaseSocket } from '../../src/socket';
 import * as configs from 'server/configs';
-import { serverProtocol } from 'server/values';
+import { serverProtocol, serverVersion } from 'server/values';
 import { get as getPlayer } from 'server/players';
+import { event as registryEvent } from 'server/registry';
 import { EventEmitter } from 'events';
 
 import { createServer, Client } from 'minecraft-protocol';
 import { Vec3 } from 'vec3';
 const Chunk = require('prismarine-chunk')('1.16');
+const mcData = require("minecraft-data")('1.16');
+
 
 import { defaultWorldData, defaultConfig } from './values';
+import { blockMappings } from './mappings'
 
-import { IChatMessage, ILoginSuccess, IPlayerEntity, IPlayerKick, IWorldChunkLoad, IWorldChunkUnload } from 'voxelsrv-protocol/js/server';
+import { IChatMessage, ILoginSuccess, IPlayerEntity, IPlayerKick, IPlayerTeleport, IWorldChunkLoad, IWorldChunkUnload } from 'voxelsrv-protocol/js/server';
 import { Player } from 'server/players';
 
 const cfg = { ...defaultConfig, ...configs.load('mconnect', 'config') };
 
+let blockPalette = {};
+
 const server = getServerInstance();
+
+registryEvent.on('palette-finished', (palette) => {
+	Object.entries(palette).forEach((x: [string, number]) => {
+		if (mcData.blocksByName[blockMappings[x[0]]] != undefined) blockPalette[x[1]] = mcData.blocksByName[blockMappings[x[0]]].id
+		else blockPalette[x[1]] = 1
+	})
+});
+
 
 class MCSocket extends BaseSocket {
 	socket: Client;
@@ -64,7 +78,7 @@ mcserver.on('login', (client) => {
 	client.write('login', {
 		entityId: client.uuid,
 		levelType: 'default',
-		gameMode: 0,
+		gameMode: 1,
 		previousGameMode: 255,
 		worldNames: ['minecraft:overworld'],
 		dimensionCodec: { name: '', type: 'compound', value: { dimension: { type: 'list', value: { type: 'compound', value: [defaultWorldData] } } } },
@@ -77,9 +91,7 @@ mcserver.on('login', (client) => {
 		enableRespawnScreen: false,
 	});
 
-	client.on('chat', (msg: IChatMessage) => {
-		socket.emit('ActionMessage', { message: msg.message });
-	});
+
 
 	//client.on('packet', (data, packet));
 	client.on('end', () => socket.close());
@@ -90,6 +102,17 @@ mcserver.on('login', (client) => {
 		ignoreEntity = data.uuid;
 	});
 
+	socket.client.on('PlayerTeleport', function (data: IPlayerTeleport) {
+		client.write('position', {
+			x: data.x,
+			y: data.y,
+			z: data.z,
+			yaw: 0,
+			pitch: 0,
+			flags: 0x00,
+		});
+	});
+
 	socket.client.on('WorldChunkLoad', async (data: IWorldChunkLoad) => {
 		const chunk = await player.world.getChunk([data.x, data.z], false);
 
@@ -98,20 +121,19 @@ mcserver.on('login', (client) => {
 		const mchunk3 = new Chunk();
 		const mchunk4 = new Chunk();
 
-
 		for (var x = 0; x < 16; x++) {
 			for (var z = 0; z < 16; z++) {
 				for (var y = 0; y < 256; y++) {
-					mchunk1.setBlockType(new Vec3(x, y, z), chunk.data.get(x, y, z));
+					mchunk1.setBlockType(new Vec3(x, y, z), blockPalette[chunk.data.get(x, y, z)]);
 					mchunk1.setSkyLight(new Vec3(x, y, z), 15);
 
-					mchunk2.setBlockType(new Vec3(x, y, z), chunk.data.get(x + 16, y, z));
+					mchunk2.setBlockType(new Vec3(x, y, z), blockPalette[chunk.data.get(x + 16, y, z)]);
 					mchunk2.setSkyLight(new Vec3(x, y, z), 15);
 
-					mchunk3.setBlockType(new Vec3(x, y, z), chunk.data.get(x, y, z + 16));
+					mchunk3.setBlockType(new Vec3(x, y, z), blockPalette[chunk.data.get(x, y, z + 16)]);
 					mchunk3.setSkyLight(new Vec3(x, y, z), 15);
 
-					mchunk4.setBlockType(new Vec3(x, y, z), chunk.data.get(x + 16, y, z + 16));
+					mchunk4.setBlockType(new Vec3(x, y, z), blockPalette[chunk.data.get(x + 16, y, z + 16)]);
 					mchunk4.setSkyLight(new Vec3(x, y, z), 15);
 				}
 			}
@@ -188,16 +210,13 @@ mcserver.on('login', (client) => {
 			chunkData: mchunk4.dump(),
 			blockEntities: [],
 		});
-
-
 	});
 
 	socket.client.on('WorldChunkUnload', (data: IWorldChunkUnload) => {
-		client.write('unload_chunk', {x: data.x * 2 - 1, z: data.z * 2 - 1})
-		client.write('unload_chunk', {x: data.x * 2 - 1, z: data.z * 2})
-		client.write('unload_chunk', {x: data.x * 2, z: data.z * 2 - 1})
-		client.write('unload_chunk', {x: data.x * 2, z: data.z * 2})
-
+		client.write('unload_chunk', { x: data.x * 2 - 1, z: data.z * 2 - 1 });
+		client.write('unload_chunk', { x: data.x * 2 - 1, z: data.z * 2 });
+		client.write('unload_chunk', { x: data.x * 2, z: data.z * 2 - 1 });
+		client.write('unload_chunk', { x: data.x * 2, z: data.z * 2 });
 	});
 
 	socket.client.on('PlayerKick', function (data: IPlayerKick) {});
@@ -211,6 +230,9 @@ mcserver.on('login', (client) => {
 			pitch: 0,
 			flags: 0x00,
 		});
+
+		client.registerChannel(('brand'), ['string', []])
+		client.writeChannel('brand', `VoxelSrv-Server ${serverVersion} [MConnect ${version}]`)
 
 		player = getPlayer(client.username.toLowerCase());
 	});
@@ -226,7 +248,6 @@ mcserver.on('login', (client) => {
 			tempmsg = msg;
 			msg = msg.replace(',"font":"lato"', '');
 			msg = msg.replace(',"font":"lato-bold"', '');
-
 		}
 
 		client.write('chat', {
@@ -234,17 +255,20 @@ mcserver.on('login', (client) => {
 			position: 0,
 			sender: '0',
 		});
-
 	});
 
 	client.on('error', (e) => console.error(client.username, e));
-
 
 	socket.emit('LoginResponse', {
 		username: client.username,
 		protocol: serverProtocol,
 		mobile: false,
 	});
+
+	client.on('chat', (msg) => {
+		socket.emit('ActionMessage', { message: msg.message });
+	});
+
 });
 
 mcserver.on('error', (e) => console.error(e));

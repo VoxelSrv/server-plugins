@@ -1,10 +1,10 @@
-import { serverConfig } from "server/values";
+import { serverConfig } from 'server/values';
+import { ServerOptions } from 'minecraft-protocol';
 
-export const defaultConfig = {
-	'online-mode': false, // optional
-	encryption: false, // optional
-	host: '0.0.0.0', // optional
-	port: 25565, // optional
+export const defaultConfig: ServerOptions  = {
+	'online-mode': false,
+	host: '0.0.0.0',
+	port: 25565,
 	version: '1.16.1',
 	motd: serverConfig.motd,
 	maxPlayers: serverConfig.maxplayers,

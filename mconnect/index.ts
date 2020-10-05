@@ -1,5 +1,5 @@
 export const name = 'MConnect';
-export const version = '0.0.2';
+export const version = '0.0.3';
 export const supported = '>=0.2.0-beta.6';
 
 //
@@ -17,13 +17,21 @@ import { EventEmitter } from 'events';
 import { createServer, Client } from 'minecraft-protocol';
 import { Vec3 } from 'vec3';
 const Chunk = require('prismarine-chunk')('1.16');
-const mcData = require("minecraft-data")('1.16');
-
+const mcData = require('minecraft-data')('1.16');
 
 import { defaultWorldData, defaultConfig } from './values';
-import { blockMappings } from './mappings'
+import { blockMappings } from './mappings';
 
-import { IChatMessage, ILoginSuccess, IPlayerEntity, IPlayerKick, IPlayerTeleport, IWorldChunkLoad, IWorldChunkUnload } from 'voxelsrv-protocol/js/server';
+import {
+	IChatMessage,
+	ILoginSuccess,
+	IPlayerEntity,
+	IPlayerKick,
+	IPlayerTeleport,
+	IWorldBlockUpdate,
+	IWorldChunkLoad,
+	IWorldChunkUnload,
+} from 'voxelsrv-protocol/js/server';
 import { Player } from 'server/players';
 
 const cfg = { ...defaultConfig, ...configs.load('mconnect', 'config') };
@@ -34,11 +42,16 @@ const server = getServerInstance();
 
 registryEvent.on('palette-finished', (palette) => {
 	Object.entries(palette).forEach((x: [string, number]) => {
-		if (mcData.blocksByName[blockMappings[x[0]]] != undefined) blockPalette[x[1]] = mcData.blocksByName[blockMappings[x[0]]].id
-		else blockPalette[x[1]] = 1
-	})
-});
+		let id: string = '';
 
+		if (Array.isArray(blockMappings[x[0]])) id = blockMappings[x[0]][0];
+		else id = blockMappings[x[0]];
+		if (mcData.blocksByName[id] != undefined) {
+			let state = Array.isArray(blockMappings[x[0]]) ? blockMappings[x[0]][1] : 0;
+			blockPalette[x[1]] = [mcData.blocksByName[id].id, state];
+		} else blockPalette[x[1]] = [1, 0];
+	});
+});
 
 class MCSocket extends BaseSocket {
 	socket: Client;
@@ -91,8 +104,6 @@ mcserver.on('login', (client) => {
 		enableRespawnScreen: false,
 	});
 
-
-
 	//client.on('packet', (data, packet));
 	client.on('end', () => socket.close());
 
@@ -113,6 +124,7 @@ mcserver.on('login', (client) => {
 		});
 	});
 
+
 	socket.client.on('WorldChunkLoad', async (data: IWorldChunkLoad) => {
 		const chunk = await player.world.getChunk([data.x, data.z], false);
 
@@ -124,24 +136,38 @@ mcserver.on('login', (client) => {
 		for (var x = 0; x < 16; x++) {
 			for (var z = 0; z < 16; z++) {
 				for (var y = 0; y < 256; y++) {
-					mchunk1.setBlockType(new Vec3(x, y, z), blockPalette[chunk.data.get(x, y, z)]);
-					mchunk1.setSkyLight(new Vec3(x, y, z), 15);
+					const vec = new Vec3(x, y, z);
+					mchunk1.setBlockType(vec, blockPalette[chunk.data.get(x, y, z)][0]);
+					mchunk1.setBlockStateId(vec, mcData.blocksByStateId[mchunk1.getBlockStateId(vec)].minStateId + blockPalette[chunk.data.get(x, y, z)][1]);
+					mchunk1.setSkyLight(vec, 15);
 
-					mchunk2.setBlockType(new Vec3(x, y, z), blockPalette[chunk.data.get(x + 16, y, z)]);
-					mchunk2.setSkyLight(new Vec3(x, y, z), 15);
+					mchunk2.setBlockType(vec, blockPalette[chunk.data.get(x + 16, y, z)][0]);
+					mchunk2.setBlockStateId(
+						vec,
+						mcData.blocksByStateId[mchunk2.getBlockStateId(vec)].minStateId + blockPalette[chunk.data.get(x + 16, y, z)][1]
+					);
+					mchunk2.setSkyLight(vec, 15);
 
-					mchunk3.setBlockType(new Vec3(x, y, z), blockPalette[chunk.data.get(x, y, z + 16)]);
-					mchunk3.setSkyLight(new Vec3(x, y, z), 15);
+					mchunk3.setBlockType(vec, blockPalette[chunk.data.get(x, y, z + 16)][0]);
+					mchunk3.setBlockStateId(
+						vec,
+						mcData.blocksByStateId[mchunk3.getBlockStateId(vec)].minStateId + blockPalette[chunk.data.get(x, y, z + 16)][1]
+					);
+					mchunk3.setSkyLight(vec, 15);
 
-					mchunk4.setBlockType(new Vec3(x, y, z), blockPalette[chunk.data.get(x + 16, y, z + 16)]);
-					mchunk4.setSkyLight(new Vec3(x, y, z), 15);
+					mchunk4.setBlockType(vec, blockPalette[chunk.data.get(x + 16, y, z + 16)][0]);
+					mchunk4.setBlockStateId(
+						vec,
+						mcData.blocksByStateId[mchunk4.getBlockStateId(vec)].minStateId + blockPalette[chunk.data.get(x + 16, y, z + 16)][1]
+					);
+					mchunk4.setSkyLight(vec, 15);
 				}
 			}
 		}
 
 		client.write('map_chunk', {
-			x: data.x * 2 - 1,
-			z: data.z * 2 - 1,
+			x: data.x * 2,
+			z: data.z * 2,
 			groundUp: true,
 			bitMap: mchunk1.getMask(),
 			biomes: mchunk1.dumpBiomes(),
@@ -158,8 +184,8 @@ mcserver.on('login', (client) => {
 		});
 
 		client.write('map_chunk', {
-			x: data.x * 2,
-			z: data.z * 2 - 1,
+			x: data.x * 2 + 1,
+			z: data.z * 2,
 			groundUp: true,
 			bitMap: mchunk2.getMask(),
 			biomes: mchunk2.dumpBiomes(),
@@ -176,8 +202,8 @@ mcserver.on('login', (client) => {
 		});
 
 		client.write('map_chunk', {
-			x: data.x * 2 - 1,
-			z: data.z * 2,
+			x: data.x * 2,
+			z: data.z * 2 + 1,
 			groundUp: true,
 			bitMap: mchunk3.getMask(),
 			biomes: mchunk3.dumpBiomes(),
@@ -194,8 +220,8 @@ mcserver.on('login', (client) => {
 		});
 
 		client.write('map_chunk', {
-			x: data.x * 2,
-			z: data.z * 2,
+			x: data.x * 2 + 1,
+			z: data.z * 2 + 1,
 			groundUp: true,
 			bitMap: mchunk4.getMask(),
 			biomes: mchunk4.dumpBiomes(),
@@ -231,10 +257,22 @@ mcserver.on('login', (client) => {
 			flags: 0x00,
 		});
 
-		client.registerChannel(('brand'), ['string', []])
-		client.writeChannel('brand', `VoxelSrv-Server ${serverVersion} [MConnect ${version}]`)
+		client.registerChannel('brand', ['string', []]);
+		client.writeChannel('brand', `VoxelSrv-Server ${serverVersion} [MConnect ${version}]`);
 
 		player = getPlayer(client.username.toLowerCase());
+
+		client.on('chat', (msg) => {
+			socket.emit('ActionMessage', { message: msg.message });
+		});
+	
+		client.on('position', (msg) => {
+			socket.emit('ActionMove', {x: msg.x, y: msg.y, z: msg.z, rotation: player.entity.data.rotation, pitch: player.entity.data.pitch});
+		})
+
+		client.on('look', (msg) => {
+			socket.emit('ActionMove', {x: player.entity.data.position[0], y: player.entity.data.position[1], z: player.entity.data.position[2], rotation: msg.yaw, pitch: msg.pitch});
+		})
 	});
 
 	socket.client.on('ChatMessage', function (data) {
@@ -265,9 +303,8 @@ mcserver.on('login', (client) => {
 		mobile: false,
 	});
 
-	client.on('chat', (msg) => {
-		socket.emit('ActionMessage', { message: msg.message });
-	});
+
+
 
 });
 

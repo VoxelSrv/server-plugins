@@ -1,5 +1,5 @@
 export const name = 'MConnect';
-export const version = '0.0.3';
+export const version = '0.0.4';
 export const supported = '>=0.2.0-beta.6';
 
 //
@@ -19,6 +19,8 @@ import { Vec3 } from 'vec3';
 const Chunk = require('prismarine-chunk')('1.16');
 const mcData = require('minecraft-data')('1.16');
 
+import ndarray = require('ndarray');
+
 import { defaultWorldData, defaultConfig } from './values';
 import { blockMappings } from './mappings';
 
@@ -35,10 +37,13 @@ import {
 import { Player } from 'server/players';
 
 const cfg = { ...defaultConfig, ...configs.load('mconnect', 'config') };
+configs.save('mconnect', 'config', cfg)
 
 let blockPalette = {};
 
 const server = getServerInstance();
+
+const degToRad = 0.01745329252
 
 registryEvent.on('palette-finished', (palette) => {
 	Object.entries(palette).forEach((x: [string, number]) => {
@@ -124,9 +129,8 @@ mcserver.on('login', (client) => {
 		});
 	});
 
-
 	socket.client.on('WorldChunkLoad', async (data: IWorldChunkLoad) => {
-		const chunk = await player.world.getChunk([data.x, data.z], false);
+		const chunk = new ndarray(new Uint16Array(data.data), [32, 256, 32]);
 
 		const mchunk1 = new Chunk();
 		const mchunk2 = new Chunk();
@@ -137,28 +141,22 @@ mcserver.on('login', (client) => {
 			for (var z = 0; z < 16; z++) {
 				for (var y = 0; y < 256; y++) {
 					const vec = new Vec3(x, y, z);
-					mchunk1.setBlockType(vec, blockPalette[chunk.data.get(x, y, z)][0]);
-					mchunk1.setBlockStateId(vec, mcData.blocksByStateId[mchunk1.getBlockStateId(vec)].minStateId + blockPalette[chunk.data.get(x, y, z)][1]);
+					mchunk1.setBlockType(vec, blockPalette[chunk.get(x, y, z)][0]);
+					mchunk1.setBlockStateId(vec, mcData.blocksByStateId[mchunk1.getBlockStateId(vec)].minStateId + blockPalette[chunk.get(x, y, z)][1]);
 					mchunk1.setSkyLight(vec, 15);
 
-					mchunk2.setBlockType(vec, blockPalette[chunk.data.get(x + 16, y, z)][0]);
-					mchunk2.setBlockStateId(
-						vec,
-						mcData.blocksByStateId[mchunk2.getBlockStateId(vec)].minStateId + blockPalette[chunk.data.get(x + 16, y, z)][1]
-					);
+					mchunk2.setBlockType(vec, blockPalette[chunk.get(x + 16, y, z)][0]);
+					mchunk2.setBlockStateId(vec, mcData.blocksByStateId[mchunk2.getBlockStateId(vec)].minStateId + blockPalette[chunk.get(x + 16, y, z)][1]);
 					mchunk2.setSkyLight(vec, 15);
 
-					mchunk3.setBlockType(vec, blockPalette[chunk.data.get(x, y, z + 16)][0]);
-					mchunk3.setBlockStateId(
-						vec,
-						mcData.blocksByStateId[mchunk3.getBlockStateId(vec)].minStateId + blockPalette[chunk.data.get(x, y, z + 16)][1]
-					);
+					mchunk3.setBlockType(vec, blockPalette[chunk.get(x, y, z + 16)][0]);
+					mchunk3.setBlockStateId(vec, mcData.blocksByStateId[mchunk3.getBlockStateId(vec)].minStateId + blockPalette[chunk.get(x, y, z + 16)][1]);
 					mchunk3.setSkyLight(vec, 15);
 
-					mchunk4.setBlockType(vec, blockPalette[chunk.data.get(x + 16, y, z + 16)][0]);
+					mchunk4.setBlockType(vec, blockPalette[chunk.get(x + 16, y, z + 16)][0]);
 					mchunk4.setBlockStateId(
 						vec,
-						mcData.blocksByStateId[mchunk4.getBlockStateId(vec)].minStateId + blockPalette[chunk.data.get(x + 16, y, z + 16)][1]
+						mcData.blocksByStateId[mchunk4.getBlockStateId(vec)].minStateId + blockPalette[chunk.get(x + 16, y, z + 16)][1]
 					);
 					mchunk4.setSkyLight(vec, 15);
 				}
@@ -265,14 +263,20 @@ mcserver.on('login', (client) => {
 		client.on('chat', (msg) => {
 			socket.emit('ActionMessage', { message: msg.message });
 		});
-	
+
 		client.on('position', (msg) => {
-			socket.emit('ActionMove', {x: msg.x, y: msg.y, z: msg.z, rotation: player.entity.data.rotation, pitch: player.entity.data.pitch});
-		})
+			socket.emit('ActionMove', { x: msg.x, y: msg.y, z: msg.z, rotation: player.entity.data.rotation, pitch: player.entity.data.pitch });
+		});
 
 		client.on('look', (msg) => {
-			socket.emit('ActionMove', {x: player.entity.data.position[0], y: player.entity.data.position[1], z: player.entity.data.position[2], rotation: msg.yaw, pitch: msg.pitch});
-		})
+			socket.emit('ActionMove', {
+				x: player.entity.data.position[0],
+				y: player.entity.data.position[1],
+				z: player.entity.data.position[2],
+				rotation: msg.yaw * degToRad * -1,
+				pitch: msg.pitch * degToRad,
+			});
+		});
 	});
 
 	socket.client.on('ChatMessage', function (data) {
@@ -302,10 +306,6 @@ mcserver.on('login', (client) => {
 		protocol: serverProtocol,
 		mobile: false,
 	});
-
-
-
-
 });
 
 mcserver.on('error', (e) => console.error(e));

@@ -8,6 +8,7 @@ export const defaultConfig: ServerOptions  = {
 	version: '1.16.1',
 	motd: serverConfig.motd,
 	maxPlayers: serverConfig.maxplayers,
+	
 };
 
 

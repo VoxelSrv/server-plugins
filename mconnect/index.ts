@@ -1,5 +1,5 @@
 export const name = 'MConnect';
-export const version = '0.0.4';
+export const version = '0.0.5';
 export const supported = '>=0.2.0-beta.6';
 
 //
@@ -9,7 +9,7 @@ export const supported = '>=0.2.0-beta.6';
 import { getServerInstance } from '../../src/server';
 import { BaseSocket } from '../../src/socket';
 import * as configs from 'server/configs';
-import { serverProtocol, serverVersion } from 'server/values';
+import { serverConfig, serverProtocol, serverVersion } from 'server/values';
 import { get as getPlayer } from 'server/players';
 import { event as registryEvent } from 'server/registry';
 import { EventEmitter } from 'events';
@@ -37,13 +37,13 @@ import {
 import { Player } from 'server/players';
 
 const cfg = { ...defaultConfig, ...configs.load('mconnect', 'config') };
-configs.save('mconnect', 'config', cfg)
+configs.save('mconnect', 'config', cfg);
 
 let blockPalette = {};
 
 const server = getServerInstance();
 
-const degToRad = 0.01745329252
+const degToRad = 0.01745329252;
 
 registryEvent.on('palette-finished', (palette) => {
 	Object.entries(palette).forEach((x: [string, number]) => {
@@ -92,6 +92,7 @@ mcserver.on('login', (client) => {
 
 	server.connectPlayer(socket);
 	let player: Player;
+	let playerChunk: string = '';
 
 	client.write('login', {
 		entityId: client.uuid,
@@ -104,6 +105,7 @@ mcserver.on('login', (client) => {
 		worldName: 'minecraft:overworld',
 		difficulty: 0,
 		hashedSeed: [0, 0],
+		viewDistance: serverConfig.viewDistance * 2 + 2,
 		maxPlayers: 10,
 		reducedDebugInfo: false,
 		enableRespawnScreen: false,
@@ -117,6 +119,17 @@ mcserver.on('login', (client) => {
 	socket.client.on('PlayerEntity', function (data: IPlayerEntity) {
 		ignoreEntity = data.uuid;
 	});
+
+	socket.client.on('WorldBlockUpdate', function(data: IWorldBlockUpdate) {
+		client.write('block_change', {
+			location: {
+				x: data.x,
+				y: data.y,
+				z: data.z
+			},
+			type: blockPalette[data.id][0]
+		})
+	})
 
 	socket.client.on('PlayerTeleport', function (data: IPlayerTeleport) {
 		client.write('position', {
@@ -163,89 +176,99 @@ mcserver.on('login', (client) => {
 			}
 		}
 
-		client.write('map_chunk', {
-			x: data.x * 2,
-			z: data.z * 2,
-			groundUp: true,
-			bitMap: mchunk1.getMask(),
-			biomes: mchunk1.dumpBiomes(),
-			ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
-			heightmaps: {
-				type: 'compound',
-				name: '',
-				value: {
-					MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) },
+		setTimeout(() => {
+			client.write('map_chunk', {
+				x: data.x * 2,
+				z: data.z * 2,
+				groundUp: true,
+				bitMap: mchunk1.getMask(),
+				biomes: mchunk1.dumpBiomes(),
+				ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
+				heightmaps: {
+					type: 'compound',
+					name: '',
+					value: {
+						MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) },
+					},
 				},
-			},
-			chunkData: mchunk1.dump(),
-			blockEntities: [],
-		});
+				chunkData: mchunk1.dump(),
+				blockEntities: [],
+			});
+		}, 50);
+		setTimeout(() => {
+			client.write('map_chunk', {
+				x: data.x * 2 + 1,
+				z: data.z * 2,
+				groundUp: true,
+				bitMap: mchunk2.getMask(),
+				biomes: mchunk2.dumpBiomes(),
+				ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
+				heightmaps: {
+					type: 'compound',
+					name: '',
+					value: {
+						MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) },
+					},
+				},
+				chunkData: mchunk2.dump(),
+				blockEntities: [],
+			});
+		}, 100);
 
-		client.write('map_chunk', {
-			x: data.x * 2 + 1,
-			z: data.z * 2,
-			groundUp: true,
-			bitMap: mchunk2.getMask(),
-			biomes: mchunk2.dumpBiomes(),
-			ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
-			heightmaps: {
-				type: 'compound',
-				name: '',
-				value: {
-					MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) },
+		setTimeout(() => {
+			client.write('map_chunk', {
+				x: data.x * 2,
+				z: data.z * 2 + 1,
+				groundUp: true,
+				bitMap: mchunk3.getMask(),
+				biomes: mchunk3.dumpBiomes(),
+				ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
+				heightmaps: {
+					type: 'compound',
+					name: '',
+					value: {
+						MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) },
+					},
 				},
-			},
-			chunkData: mchunk2.dump(),
-			blockEntities: [],
-		});
+				chunkData: mchunk3.dump(),
+				blockEntities: [],
+			});
+		}, 150);
 
-		client.write('map_chunk', {
-			x: data.x * 2,
-			z: data.z * 2 + 1,
-			groundUp: true,
-			bitMap: mchunk3.getMask(),
-			biomes: mchunk3.dumpBiomes(),
-			ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
-			heightmaps: {
-				type: 'compound',
-				name: '',
-				value: {
-					MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) },
+		setTimeout(() => {
+			client.write('map_chunk', {
+				x: data.x * 2 + 1,
+				z: data.z * 2 + 1,
+				groundUp: true,
+				bitMap: mchunk4.getMask(),
+				biomes: mchunk4.dumpBiomes(),
+				ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
+				heightmaps: {
+					type: 'compound',
+					name: '',
+					value: {
+						MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) },
+					},
 				},
-			},
-			chunkData: mchunk3.dump(),
-			blockEntities: [],
-		});
-
-		client.write('map_chunk', {
-			x: data.x * 2 + 1,
-			z: data.z * 2 + 1,
-			groundUp: true,
-			bitMap: mchunk4.getMask(),
-			biomes: mchunk4.dumpBiomes(),
-			ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
-			heightmaps: {
-				type: 'compound',
-				name: '',
-				value: {
-					MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) },
-				},
-			},
-			chunkData: mchunk4.dump(),
-			blockEntities: [],
-		});
+				chunkData: mchunk4.dump(),
+				blockEntities: [],
+			});
+		}, 200);
 	});
 
 	socket.client.on('WorldChunkUnload', (data: IWorldChunkUnload) => {
-		client.write('unload_chunk', { x: data.x * 2 - 1, z: data.z * 2 - 1 });
-		client.write('unload_chunk', { x: data.x * 2 - 1, z: data.z * 2 });
-		client.write('unload_chunk', { x: data.x * 2, z: data.z * 2 - 1 });
-		client.write('unload_chunk', { x: data.x * 2, z: data.z * 2 });
+		client.write('unload_chunk', { chunkX: data.x * 2, chunkZ: data.z * 2 });
+		client.write('unload_chunk', { chunkX: data.x * 2, chunkZ: data.z * 2 + 1 });
+		client.write('unload_chunk', { chunkX: data.x * 2 + 1, chunkZ: data.z * 2 });
+		client.write('unload_chunk', { chunkX: data.x * 2 + 1, chunkZ: data.z * 2 + 1 });
 	});
 
 	socket.client.on('PlayerKick', function (data: IPlayerKick) {});
 
 	socket.client.on('LoginSuccess', function (dataPlayer: ILoginSuccess) {
+		console.log(`Player ${client.username} connected with Minecraft Client`);
+		player = getPlayer(client.username.toLowerCase());
+
 		client.write('position', {
 			x: dataPlayer.xPos,
 			y: dataPlayer.yPos,
@@ -255,17 +278,53 @@ mcserver.on('login', (client) => {
 			flags: 0x00,
 		});
 
+		client.write('set_slot', {
+			windowId: 0,
+			slot: 6,
+			item: { present: true, blockId: 296, itemCount: 32 }
+		})
+
+		client.write('update_view_position', {
+			chunkX: player.entity.chunkID[0] * 2,
+			chunkZ: player.entity.chunkID[1] * 2,
+		});
+
 		client.registerChannel('brand', ['string', []]);
 		client.writeChannel('brand', `VoxelSrv-Server ${serverVersion} [MConnect ${version}]`);
 
-		player = getPlayer(client.username.toLowerCase());
 
 		client.on('chat', (msg) => {
 			socket.emit('ActionMessage', { message: msg.message });
 		});
 
+
+		client.on('block_place', (msg) => {
+			let x = msg.location.x, y = msg.location.y, z = msg.location.z;
+
+			if (msg.cursorY == 1) y = y + 1;
+			else if (msg.cursorY == 0) y = y - 1;
+			else if (msg.cursorX == 1) x = x + 1;
+			else if (msg.cursorX == 0) x = x - 1;
+			else if (msg.cursorZ == 1) z = z + 1;
+			else if (msg.cursorZ == 0) z = z - 1;
+
+			socket.emit('ActionBlockPlace', { x, y, z, x2: msg.location.x, y2: msg.location.y, z2: msg.location.z });
+		});
+
+		client.on('block_dig', (msg) => {
+			socket.emit('ActionBlockBreak', { x: msg.location.x, y: msg.location.y, z: msg.location.z });
+		});
+
 		client.on('position', (msg) => {
 			socket.emit('ActionMove', { x: msg.x, y: msg.y, z: msg.z, rotation: player.entity.data.rotation, pitch: player.entity.data.pitch });
+
+			if (playerChunk != player.entity.chunkID.toString()) {
+				playerChunk = player.entity.chunkID.toString();
+				client.write('update_view_position', {
+					chunkX: player.entity.chunkID[0] * 2,
+					chunkZ: player.entity.chunkID[1] * 2,
+				});
+			}
 		});
 
 		client.on('look', (msg) => {

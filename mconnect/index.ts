@@ -1,5 +1,5 @@
 export const name = 'MConnect';
-export const version = '0.0.5';
+export const version = '0.0.6';
 export const supported = '>=0.2.0-beta.6';
 
 //
@@ -109,6 +109,8 @@ mcserver.on('login', (client) => {
 		maxPlayers: 10,
 		reducedDebugInfo: false,
 		enableRespawnScreen: false,
+		isDebug: false,
+		isFlat: false,
 	});
 
 	//client.on('packet', (data, packet));
@@ -120,22 +122,22 @@ mcserver.on('login', (client) => {
 		ignoreEntity = data.uuid;
 	});
 
-	socket.client.on('WorldBlockUpdate', function(data: IWorldBlockUpdate) {
+	socket.client.on('WorldBlockUpdate', function (data: IWorldBlockUpdate) {
 		client.write('block_change', {
 			location: {
 				x: data.x,
 				y: data.y,
-				z: data.z
+				z: -1 * data.z,
 			},
-			type: blockPalette[data.id][0]
-		})
-	})
+			type: blockPalette[data.id][0],
+		});
+	});
 
 	socket.client.on('PlayerTeleport', function (data: IPlayerTeleport) {
 		client.write('position', {
 			x: data.x,
 			y: data.y,
-			z: data.z,
+			z: -1 * data.z,
 			yaw: 0,
 			pitch: 0,
 			flags: 0x00,
@@ -153,7 +155,7 @@ mcserver.on('login', (client) => {
 		for (var x = 0; x < 16; x++) {
 			for (var z = 0; z < 16; z++) {
 				for (var y = 0; y < 256; y++) {
-					const vec = new Vec3(x, y, z);
+					const vec = new Vec3(x, y, 15 - z);
 					mchunk1.setBlockType(vec, blockPalette[chunk.get(x, y, z)][0]);
 					mchunk1.setBlockStateId(vec, mcData.blocksByStateId[mchunk1.getBlockStateId(vec)].minStateId + blockPalette[chunk.get(x, y, z)][1]);
 					mchunk1.setSkyLight(vec, 15);
@@ -179,7 +181,7 @@ mcserver.on('login', (client) => {
 		setTimeout(() => {
 			client.write('map_chunk', {
 				x: data.x * 2,
-				z: data.z * 2,
+				z: -1 * (data.z * 2) - 1,
 				groundUp: true,
 				bitMap: mchunk1.getMask(),
 				biomes: mchunk1.dumpBiomes(),
@@ -198,7 +200,7 @@ mcserver.on('login', (client) => {
 		setTimeout(() => {
 			client.write('map_chunk', {
 				x: data.x * 2 + 1,
-				z: data.z * 2,
+				z: -1 * (data.z * 2) - 1,
 				groundUp: true,
 				bitMap: mchunk2.getMask(),
 				biomes: mchunk2.dumpBiomes(),
@@ -218,7 +220,7 @@ mcserver.on('login', (client) => {
 		setTimeout(() => {
 			client.write('map_chunk', {
 				x: data.x * 2,
-				z: data.z * 2 + 1,
+				z: -1 * (data.z * 2 + 1) - 1,
 				groundUp: true,
 				bitMap: mchunk3.getMask(),
 				biomes: mchunk3.dumpBiomes(),
@@ -238,7 +240,7 @@ mcserver.on('login', (client) => {
 		setTimeout(() => {
 			client.write('map_chunk', {
 				x: data.x * 2 + 1,
-				z: data.z * 2 + 1,
+				z: -1 * (data.z * 2 + 1) - 1,
 				groundUp: true,
 				bitMap: mchunk4.getMask(),
 				biomes: mchunk4.dumpBiomes(),
@@ -257,10 +259,10 @@ mcserver.on('login', (client) => {
 	});
 
 	socket.client.on('WorldChunkUnload', (data: IWorldChunkUnload) => {
-		client.write('unload_chunk', { chunkX: data.x * 2, chunkZ: data.z * 2 });
-		client.write('unload_chunk', { chunkX: data.x * 2, chunkZ: data.z * 2 + 1 });
-		client.write('unload_chunk', { chunkX: data.x * 2 + 1, chunkZ: data.z * 2 });
-		client.write('unload_chunk', { chunkX: data.x * 2 + 1, chunkZ: data.z * 2 + 1 });
+		client.write('unload_chunk', { chunkX: data.x * 2, chunkZ: -1 * (data.z * 2) - 1 });
+		client.write('unload_chunk', { chunkX: data.x * 2, chunkZ: -1 * (data.z * 2 + 1) - 1 });
+		client.write('unload_chunk', { chunkX: data.x * 2 + 1, chunkZ: -1 * (data.z * 2) - 1 });
+		client.write('unload_chunk', { chunkX: data.x * 2 + 1, chunkZ: -1 * (data.z * 2 + 1) - 1 });
 	});
 
 	socket.client.on('PlayerKick', function (data: IPlayerKick) {});
@@ -272,7 +274,7 @@ mcserver.on('login', (client) => {
 		client.write('position', {
 			x: dataPlayer.xPos,
 			y: dataPlayer.yPos,
-			z: dataPlayer.zPos,
+			z: -1 * dataPlayer.zPos,
 			yaw: 0,
 			pitch: 0,
 			flags: 0x00,
@@ -281,25 +283,25 @@ mcserver.on('login', (client) => {
 		client.write('set_slot', {
 			windowId: 0,
 			slot: 6,
-			item: { present: true, blockId: 296, itemCount: 32 }
-		})
+			item: { present: true, blockId: 296, itemCount: 32 },
+		});
 
 		client.write('update_view_position', {
 			chunkX: player.entity.chunkID[0] * 2,
-			chunkZ: player.entity.chunkID[1] * 2,
+			chunkZ: -1 * player.entity.chunkID[1] * 2,
 		});
 
 		client.registerChannel('brand', ['string', []]);
 		client.writeChannel('brand', `VoxelSrv-Server ${serverVersion} [MConnect ${version}]`);
 
-
 		client.on('chat', (msg) => {
 			socket.emit('ActionMessage', { message: msg.message });
 		});
 
-
 		client.on('block_place', (msg) => {
-			let x = msg.location.x, y = msg.location.y, z = msg.location.z;
+			let x = msg.location.x,
+				y = msg.location.y,
+				z = msg.location.z;
 
 			if (msg.cursorY == 1) y = y + 1;
 			else if (msg.cursorY == 0) y = y - 1;
@@ -308,32 +310,40 @@ mcserver.on('login', (client) => {
 			else if (msg.cursorZ == 1) z = z + 1;
 			else if (msg.cursorZ == 0) z = z - 1;
 
-			socket.emit('ActionBlockPlace', { x, y, z, x2: msg.location.x, y2: msg.location.y, z2: msg.location.z });
+			socket.emit('ActionBlockPlace', { x, y, z: -1 * z, x2: msg.location.x, y2: msg.location.y, z2: -1 * msg.location.z });
 		});
 
 		client.on('block_dig', (msg) => {
-			socket.emit('ActionBlockBreak', { x: msg.location.x, y: msg.location.y, z: msg.location.z });
+			socket.emit('ActionBlockBreak', { x: msg.location.x, y: msg.location.y, z: -1 * msg.location.z });
 		});
 
+		let pos = { x: dataPlayer.xPos, y: dataPlayer.yPos, z: dataPlayer.zPos };
+		let yaw = 0;
+		let pitch = 0;
+
 		client.on('position', (msg) => {
-			socket.emit('ActionMove', { x: msg.x, y: msg.y, z: msg.z, rotation: player.entity.data.rotation, pitch: player.entity.data.pitch });
+			socket.emit('ActionMove', { x: msg.x, y: msg.y, z: -1 * msg.z + 1, rotation: yaw, pitch: pitch });
+			pos = { x: msg.x, y: msg.y, z: -1 * msg.z + 1 };
 
 			if (playerChunk != player.entity.chunkID.toString()) {
 				playerChunk = player.entity.chunkID.toString();
 				client.write('update_view_position', {
 					chunkX: player.entity.chunkID[0] * 2,
-					chunkZ: player.entity.chunkID[1] * 2,
+					chunkZ: -1 * player.entity.chunkID[1] * 2,
 				});
 			}
 		});
 
 		client.on('look', (msg) => {
+			yaw = msg.yaw * degToRad * -1;
+			pitch = msg.pitch * degToRad * -1;
+
 			socket.emit('ActionMove', {
-				x: player.entity.data.position[0],
-				y: player.entity.data.position[1],
-				z: player.entity.data.position[2],
-				rotation: msg.yaw * degToRad * -1,
-				pitch: msg.pitch * degToRad,
+				x: pos.x,
+				y: pos.y,
+				z: pos.z,
+				rotation: yaw,
+				pitch: pitch,
 			});
 		});
 	});

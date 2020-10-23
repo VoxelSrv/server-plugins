@@ -1,23 +1,18 @@
 export const name = 'MConnect';
-export const version = '0.0.6';
-export const supported = '>=0.2.0-beta.6';
+export const version = '0.0.7';
+export const supported = '>=0.2.0-beta.8';
 
 //
 // Requires: minecraft-protocol, prismarine-chunk
 //
 
-import { getServerInstance } from '../../src/server';
 import { BaseSocket } from '../../src/socket';
-import * as configs from 'server/configs';
-import { serverConfig, serverProtocol, serverVersion } from 'server/values';
-import { get as getPlayer } from 'server/players';
-import { event as registryEvent } from 'server/registry';
+import * as configs from '../../src/lib/configs';
+import { serverConfig, serverProtocol, serverVersion } from '../../src/values';
 import { EventEmitter } from 'events';
 
 import { createServer, Client } from 'minecraft-protocol';
 import { Vec3 } from 'vec3';
-const Chunk = require('prismarine-chunk')('1.16');
-const mcData = require('minecraft-data')('1.16');
 
 import ndarray = require('ndarray');
 
@@ -34,18 +29,21 @@ import {
 	IWorldChunkLoad,
 	IWorldChunkUnload,
 } from 'voxelsrv-protocol/js/server';
-import { Player } from 'server/players';
+import type { Server } from '../../src/server';
+import { Player } from '../../src/lib/player';
+
+const Chunk = require('prismarine-chunk')('1.16');
+const mcData = require('minecraft-data')('1.16.3');
 
 const cfg = { ...defaultConfig, ...configs.load('mconnect', 'config') };
 configs.save('mconnect', 'config', cfg);
 
 let blockPalette = {};
 
-const server = getServerInstance();
-
+export const _start = (server: Server) => {
 const degToRad = 0.01745329252;
 
-registryEvent.on('palette-finished', (palette) => {
+server.on('palette-finished', (palette) => {
 	Object.entries(palette).forEach((x: [string, number]) => {
 		let id: string = '';
 
@@ -58,33 +56,6 @@ registryEvent.on('palette-finished', (palette) => {
 	});
 });
 
-class MCSocket extends BaseSocket {
-	socket: Client;
-	client: EventEmitter;
-	constructor(client: Client) {
-		super();
-		this.socket = client;
-		this.client = new EventEmitter();
-	}
-
-	send(type: string, data: Object) {
-		this.client.emit(type, data);
-	}
-
-	close() {
-		this.emit('close', true);
-		this.listeners = {};
-	}
-
-	emit(type, data) {
-		if (this.listeners[type] != undefined) {
-			this.listeners[type].forEach((func) => {
-				func(data);
-			});
-		}
-	}
-}
-
 const mcserver = createServer(cfg);
 
 mcserver.on('login', (client) => {
@@ -95,23 +66,22 @@ mcserver.on('login', (client) => {
 	let playerChunk: string = '';
 
 	client.write('login', {
-		entityId: client.uuid,
-		levelType: 'default',
+		entityId: 0,
+		isHardcore: false,
 		gameMode: 1,
 		previousGameMode: 255,
-		worldNames: ['minecraft:overworld'],
-		dimensionCodec: { name: '', type: 'compound', value: { dimension: { type: 'list', value: { type: 'compound', value: [defaultWorldData] } } } },
-		dimension: 'minecraft:overworld',
+		worldNames: mcData.loginPacket.worldNames,
+		dimensionCodec: mcData.loginPacket.dimensionCodec,
+		dimension: mcData.loginPacket.dimension,
 		worldName: 'minecraft:overworld',
-		difficulty: 0,
 		hashedSeed: [0, 0],
-		viewDistance: serverConfig.viewDistance * 2 + 2,
-		maxPlayers: 10,
+		maxPlayers: cfg.maxPlayers,
+		viewDistance: cfg.viewDistance * 2 + 2,
 		reducedDebugInfo: false,
-		enableRespawnScreen: false,
+		enableRespawnScreen: true,
 		isDebug: false,
-		isFlat: false,
-	});
+		isFlat: false
+	  });
 
 	//client.on('packet', (data, packet));
 	client.on('end', () => socket.close());
@@ -182,10 +152,9 @@ mcserver.on('login', (client) => {
 			client.write('map_chunk', {
 				x: data.x * 2,
 				z: -1 * (data.z * 2) - 1,
-				groundUp: true,
+				groundUp: false,
 				bitMap: mchunk1.getMask(),
 				biomes: mchunk1.dumpBiomes(),
-				ignoreOldData: true, // should be false when a chunk section is updated instead of the whole chunk being overwritten, do we ever do that?
 				heightmaps: {
 					type: 'compound',
 					name: '',
@@ -269,7 +238,7 @@ mcserver.on('login', (client) => {
 
 	socket.client.on('LoginSuccess', function (dataPlayer: ILoginSuccess) {
 		console.log(`Player ${client.username} connected with Minecraft Client`);
-		player = getPlayer(client.username.toLowerCase());
+		player = server.players.get(client.username.toLowerCase());
 
 		client.write('position', {
 			x: dataPlayer.xPos,
@@ -378,3 +347,33 @@ mcserver.on('login', (client) => {
 });
 
 mcserver.on('error', (e) => console.error(e));
+
+
+}
+
+class MCSocket extends BaseSocket {
+	socket: Client;
+	client: EventEmitter;
+	constructor(client: Client) {
+		super();
+		this.socket = client;
+		this.client = new EventEmitter();
+	}
+
+	send(type: string, data: Object) {
+		this.client.emit(type, data);
+	}
+
+	close() {
+		this.emit('close', true);
+		this.listeners = {};
+	}
+
+	emit(type, data) {
+		if (this.listeners[type] != undefined) {
+			this.listeners[type].forEach((func) => {
+				func(data);
+			});
+		}
+	}
+}

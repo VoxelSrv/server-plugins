@@ -1,4 +1,4 @@
-import { serverConfig } from 'server/values';
+import { serverConfig } from '../../src/values';
 import { ServerOptions } from 'minecraft-protocol';
 
 export const defaultConfig: ServerOptions  = {

@@ -1,0 +1,13 @@
+{
+  "name": "vsrv-worldedit-plugin",
+  "version": "0.0.4",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Patbox <patbox4@outlook.com> (https://pb4.eu)",
+  "license": "MIT",
+  "dependencies": {
+    "voxelsrv-server": "^0.2.0-beta.10"
+  }
+}

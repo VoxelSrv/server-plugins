@@ -1,0 +1,15 @@
+{
+  "name": "plugins",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Patbox <patbox4@outlook.com> (https://pb4.eu)",
+  "license": "ISC",
+  "dependencies": {
+    "vsrv-discord-plugin": "file:discord",
+    "vsrv-worldedit-plugin": "file:worldedit"
+  }
+}

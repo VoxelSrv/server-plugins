@@ -1,8 +1,13 @@
-module.exports = {
-	name: 'ItemsOnJoin',
-	version: '0.0.2',
-	supported: '>=0.2.0-alpha.8',
-	_start: function (server) {
+module.exports = function (server) {
+	return new Plugin(server);
+};
+
+class Plugin {
+	name = 'ItemsOnJoin';
+	version = '0.0.3';
+	supported = '>=0.2.0-alpha.9';
+
+	constructor(server) {
 		server.on('player-join', function (player) {
 			let x = 0;
 			Object.keys(server.registry.items).forEach((item) => {
@@ -11,4 +16,4 @@ module.exports = {
 			});
 		});
 	}
-};
+}

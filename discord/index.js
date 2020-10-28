@@ -1,22 +1,22 @@
-const fs = require('fs');
 const Discord = require('discord.js');
-const configs = require('../../src/lib/configs');
-const chat = require('../../src/lib/chat');
-const console = require('../../src/lib/console');
+const configs = require('voxelsrv-server/dist/lib/configs');
 
+module.exports = function (server) {
+	return new Plugin(server);
+};
 
-module.exports = {
-	name: 'Discord',
-	version: '0.0.3',
-	supported: '>=0.2.0-beta.8',
-	_start: function (server) {
+class Plugin {
+	name = 'Discord';
+	version = '0.0.4';
+	supported = '>=0.2.0-beta.9';
+	constructor(server) {
 		const client = new Discord.Client();
 
 		const cfg = { token: '', channel: '', ...configs.load('', 'discord') };
-		configs.save('', 'discord', cfg)
+		configs.save('', 'discord', cfg);
 
 		if (cfg.token == '') {
-			console.log('You need to configure discord plugin!')
+			console.log('You need to configure discord plugin!');
 			return;
 		}
 
@@ -49,4 +49,4 @@ module.exports = {
 
 		client.login(cfg.token);
 	}
-};
+}

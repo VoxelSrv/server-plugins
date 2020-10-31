@@ -1,5 +1,7 @@
 const Discord = require('discord.js');
 const configs = require('voxelsrv-server/dist/lib/configs');
+const chat = require('voxelsrv-server/dist/lib/chat')
+const console = require('voxelsrv-server/dist/lib/console')
 
 module.exports = function (server) {
 	return new Plugin(server);
@@ -7,7 +9,7 @@ module.exports = function (server) {
 
 class Plugin {
 	name = 'Discord';
-	version = '0.0.4';
+	version = '0.0.5';
 	supported = '>=0.2.0-beta.9';
 	constructor(server) {
 		const client = new Discord.Client();
@@ -25,7 +27,7 @@ class Plugin {
 		client.on('message', (message) => {
 			if (message.author.bot) return;
 			if (message.channel == cfg.channel) {
-				chat.sendMlt([console.executorchat, ...Object.values(players.getAll())], '[Discord] ' + message.member.displayName + ' » ' + message.content);
+				chat.sendMlt([console.executorchat, ...Object.values(server.players.getAll())], '[Discord] ' + message.member.displayName + ' » ' + message.content);
 			}
 		});
 
@@ -36,10 +38,15 @@ class Plugin {
 			});
 		});
 
-		server.on('system-message', function (data) {
-			const text = chat.convertToPlain(data);
+		server.on('player-create', function (data) {
 			client.channels.fetch(cfg.channel).then(function (channel) {
-				channel.send('> ' + text);
+				channel.send(`> ${data.displayName} joined the game!` );
+			});
+		});
+
+		server.on('player-quit', function (data) {
+			client.channels.fetch(cfg.channel).then(function (channel) {
+				channel.send(`> ${data.displayName} left the game!` );
 			});
 		});
 

@@ -8,7 +8,7 @@ class Plugin {
 	supported = '>=0.2.0-alpha.9';
 
 	constructor(server) {
-		server.on('player-join', function (player) {
+		server.on('player-created', function (player) {
 			let x = 0;
 			Object.keys(server.registry.items).forEach((item) => {
 				player.inventory.set(x, item, server.registry.items[item].stack, {});

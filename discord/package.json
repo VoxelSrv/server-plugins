@@ -9,6 +9,6 @@
   "author": "Patbox <patbox4@outlook.com> (https://pb4.eu)",
   "license": "MIT",
   "dependencies": {
-    "discord.js": "^12.4.1"
+    "discord.js": "^12.5.1"
   }
 }

@@ -30,8 +30,8 @@ var API = /** @class */ (function () {
             for (var y = y1; y <= y2; y++) {
                 for (var z = z1; z <= z2; z++) {
                     var b = getBlock();
-                    world.setBlock([x, y, z], b.rawid, true);
-                    this._server.players.sendPacketAll('WorldBlockUpdate', { x: x, y: y, z: z, id: b.rawid });
+                    world.setBlock([x, y, z], b.numId, true);
+                    this._server.players.sendPacketAll('WorldBlockUpdate', { x: x, y: y, z: z, id: b.numId });
                 }
             }
         }
@@ -58,31 +58,31 @@ var API = /** @class */ (function () {
         var z2 = p1[2] >= p2[2] ? p1[2] : p2[2];
         if (Array.isArray(org)) {
             var oObj_1 = {};
-            org.forEach(function (o) { return (oObj_1[o.rawid] = true); });
+            org.forEach(function (o) { return (oObj_1[o.numId] = true); });
             for (var x = x1; x <= x2; x++) {
                 for (var y = y1; y <= y2; y++) {
                     for (var z = z1; z <= z2; z++) {
                         var xyz = [x, y, z];
-                        if (!oObj_1[world.getBlock(xyz, false).rawid])
+                        if (!oObj_1[world.getBlock(xyz, false).numId])
                             continue;
                         var b = getBlock();
-                        world.setBlock(xyz, b.rawid, false);
-                        this._server.players.sendPacketAll('WorldBlockUpdate', { x: x, y: y, z: z, id: b.rawid });
+                        world.setBlock(xyz, b.numId, false);
+                        this._server.players.sendPacketAll('WorldBlockUpdate', { x: x, y: y, z: z, id: b.numId });
                     }
                 }
             }
         }
         else {
-            var o = org.rawid;
+            var o = org.numId;
             for (var x = x1; x <= x2; x++) {
                 for (var y = y1; y <= y2; y++) {
                     for (var z = z1; z <= z2; z++) {
                         var xyz = [x, y, z];
-                        if (world.getBlock(xyz, false).rawid != o)
+                        if (world.getBlock(xyz, false).numId != o)
                             continue;
                         var b = getBlock();
-                        this._server.players.sendPacketAll('WorldBlockUpdate', { x: x, y: y, z: z, id: b.rawid });
-                        world.setBlock(xyz, b.rawid, false);
+                        this._server.players.sendPacketAll('WorldBlockUpdate', { x: x, y: y, z: z, id: b.numId });
+                        world.setBlock(xyz, b.numId, false);
                     }
                 }
             }

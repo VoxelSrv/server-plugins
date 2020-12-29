@@ -4,20 +4,23 @@ import type { Server } from 'voxelsrv-server/dist/server';
 import type { Player } from 'voxelsrv-server/dist/lib/player';
 
 import { API } from './api';
+import { ICorePlugin } from 'voxelservercore/interfaces/plugin';
 
-export class Plugin {
+export class Plugin implements ICorePlugin {
 	name = 'WorldEdit';
-	version = '0.0.3';
-	supported = '>=0.2.0-beta.4.1';
+	version = '0.0.4';
+	supportedGameAPI = '>=0.2.0-beta.17';
+	game = 'voxelsrv';
+	supportedAPI = '0.1.6';
 	api: API;
 	getAPI() {
 		return this.api;
 	}
 
 	constructor(server: Server) {
-		const storage: {[index: string]: any} = {};
+		const storage: { [index: string]: any } = {};
 
-		this.api = new API(server)
+		this.api = new API(server);
 
 		server.on('registry-define', () => {
 			const wand = new ItemTool('we:wand', 'WorldEdit Tool', 'item/totem_of_undying', 'worldedit', Infinity, -1, -1);
@@ -35,7 +38,7 @@ export class Plugin {
 		});
 
 		server.on('player-blockbreak-1', (player: Player, data) => {
-			const sel = player.inventory.selected
+			const sel = player.inventory.selected;
 			// @ts-ignore
 			if (player.inventory.items[sel].id == 'we:wand') {
 				data.cancel = true;
@@ -78,7 +81,7 @@ export class Plugin {
 			}
 
 			executor.send([new ChatComponent(`You can't use this command!`, 'red')]);
-		}
+		};
 		server.registry.addCommand(new Command('/set', setCommand, 'Sets selected region to block.'));
 
 		const repCommand = async (executor: Player, args: any) => {
@@ -114,7 +117,7 @@ export class Plugin {
 			}
 
 			executor.send([new ChatComponent(`You can't use this command!`, 'red')]);
-		}
+		};
 		server.registry.addCommand(new Command('/replace', repCommand, 'Replaces blocks within region.'));
 		server.registry.addCommand(new Command('/rep', repCommand, 'See /replace'));
 
@@ -131,14 +134,19 @@ export class Plugin {
 
 				if (!!server.registry.blocks[args[1]]) block = server.registry.blocks[args[1]].rawid;
 				executor.world.setBlock([Math.floor(pos[0]), Math.floor(pos[1]) + parseInt(args[0]), Math.floor(pos[2])], block, false);
-				server.players.sendPacketAll('WorldBlockUpdate', { x: Math.floor(pos[0]), y: Math.floor(pos[1]) + parseInt(args[0]), z: Math.floor(pos[2]), id: block });
+				server.players.sendPacketAll('WorldBlockUpdate', {
+					x: Math.floor(pos[0]),
+					y: Math.floor(pos[1]) + parseInt(args[0]),
+					z: Math.floor(pos[2]),
+					id: block,
+				});
 				executor.teleport([pos[0], Math.floor(pos[1]) + parseInt(args[0]) + 1, pos[2]], executor.world);
 				executor.send([new ChatComponent(`Done!`, '#00c40')]);
 				return;
 			}
 
 			executor.send([new ChatComponent(`You can't use this command!`, 'red')]);
-		}
+		};
 		server.registry.addCommand(new Command('/up', upCommand, 'Creates block above and teleports player to it.'));
 	}
 }

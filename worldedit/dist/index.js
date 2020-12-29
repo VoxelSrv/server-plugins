@@ -44,8 +44,10 @@ var Plugin = /** @class */ (function () {
     function Plugin(server) {
         var _this = this;
         this.name = 'WorldEdit';
-        this.version = '0.0.3';
-        this.supported = '>=0.2.0-beta.4.1';
+        this.version = '0.0.4';
+        this.supportedGameAPI = '>=0.2.0-beta.17';
+        this.game = 'voxelsrv';
+        this.supportedAPI = '0.1.6';
         var storage = {};
         this.api = new api_1.API(server);
         server.on('registry-define', function () {
@@ -158,7 +160,12 @@ var Plugin = /** @class */ (function () {
                     if (!!server.registry.blocks[args[1]])
                         block = server.registry.blocks[args[1]].rawid;
                     executor.world.setBlock([Math.floor(pos[0]), Math.floor(pos[1]) + parseInt(args[0]), Math.floor(pos[2])], block, false);
-                    server.players.sendPacketAll('WorldBlockUpdate', { x: Math.floor(pos[0]), y: Math.floor(pos[1]) + parseInt(args[0]), z: Math.floor(pos[2]), id: block });
+                    server.players.sendPacketAll('WorldBlockUpdate', {
+                        x: Math.floor(pos[0]),
+                        y: Math.floor(pos[1]) + parseInt(args[0]),
+                        z: Math.floor(pos[2]),
+                        id: block
+                    });
                     executor.teleport([pos[0], Math.floor(pos[1]) + parseInt(args[0]) + 1, pos[2]], executor.world);
                     executor.send([new chat_1.ChatComponent("Done!", '#00c40')]);
                     return [2 /*return*/];

@@ -37,8 +37,8 @@ export class API {
 			for (var y = y1; y <= y2; y++) {
 				for (var z = z1; z <= z2; z++) {
 					const b = getBlock();
-					world.setBlock([x, y, z], b.rawid, true);
-					this._server.players.sendPacketAll('WorldBlockUpdate', { x, y, z, id: b.rawid });
+					world.setBlock([x, y, z], b.numId, true);
+					this._server.players.sendPacketAll('WorldBlockUpdate', { x, y, z, id: b.numId });
 				}
 			}
 		}
@@ -67,28 +67,28 @@ export class API {
 
 		if (Array.isArray(org)) {
 			const oObj: any = {};
-			org.forEach((o) => (oObj[o.rawid] = true));
+			org.forEach((o) => (oObj[o.numId] = true));
 			for (var x = x1; x <= x2; x++) {
 				for (var y = y1; y <= y2; y++) {
 					for (var z = z1; z <= z2; z++) {
 						const xyz: XYZ = [x, y, z];
-						if (!oObj[world.getBlock(xyz, false).rawid]) continue;
+						if (!oObj[world.getBlock(xyz, false).numId]) continue;
 						const b = getBlock();
-						world.setBlock(xyz, b.rawid, false);
-						this._server.players.sendPacketAll('WorldBlockUpdate', { x, y, z, id: b.rawid });
+						world.setBlock(xyz, b.numId, false);
+						this._server.players.sendPacketAll('WorldBlockUpdate', { x, y, z, id: b.numId });
 					}
 				}
 			}
 		} else {
-			const o = org.rawid;
+			const o = org.numId;
 			for (var x = x1; x <= x2; x++) {
 				for (var y = y1; y <= y2; y++) {
 					for (var z = z1; z <= z2; z++) {
 						const xyz: XYZ = [x, y, z];
-						if (world.getBlock(xyz, false).rawid != o) continue;
+						if (world.getBlock(xyz, false).numId != o) continue;
 						const b = getBlock();
-						this._server.players.sendPacketAll('WorldBlockUpdate', { x, y, z, id: b.rawid });
-						world.setBlock(xyz, b.rawid, false);
+						this._server.players.sendPacketAll('WorldBlockUpdate', { x, y, z, id: b.numId });
+						world.setBlock(xyz, b.numId, false);
 					}
 				}
 			}

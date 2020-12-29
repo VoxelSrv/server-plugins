@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
-const configs = require('voxelsrv-server/dist/lib/configs');
-const chat = require('voxelsrv-server/dist/lib/chat')
-const console = require('voxelsrv-server/dist/lib/console')
+
+const api = require('voxelservercore/api')
 
 module.exports = function (server) {
 	return new Plugin(server);
@@ -9,30 +8,37 @@ module.exports = function (server) {
 
 class Plugin {
 	name = 'Discord';
-	version = '0.0.5';
-	supported = '>=0.2.0-beta.9';
+	version = '0.0.6';
+	game = '*';
+	supportedGameAPI = '*';
+	supportedAPI = '0.1.6';
 	constructor(server) {
 		const client = new Discord.Client();
 
-		const cfg = { token: '', channel: '', ...configs.load('', 'discord') };
-		configs.save('', 'discord', cfg);
+		const cfg = { token: '', channel: '', ...server.loadConfig('', 'discord') };
+		server.saveConfig('', 'discord', cfg);
 
 		if (cfg.token == '') {
 			console.log('You need to configure discord plugin!');
 			return;
 		}
 
+		const broadcast = (msg) => {
+			server.players.sendMessageToAll(msg);
+			server.log.chat(msg);
+		};
+
 		client.commands = new Discord.Collection();
 
 		client.on('message', (message) => {
 			if (message.author.bot) return;
 			if (message.channel == cfg.channel) {
-				chat.sendMlt([console.executorchat, ...Object.values(server.players.getAll())], '[Discord] ' + message.member.displayName + ' » ' + message.content);
+				broadcast('[Discord] ' + message.member.displayName + ' » ' + message.content);
 			}
 		});
 
 		server.on('chat-message', function (data) {
-			const text = chat.convertToPlain(data);
+			const text = api.MessageStringify(data);
 			client.channels.fetch(cfg.channel).then(function (channel) {
 				channel.send(text);
 			});
@@ -40,13 +46,13 @@ class Plugin {
 
 		server.on('player-create', function (data) {
 			client.channels.fetch(cfg.channel).then(function (channel) {
-				channel.send(`> ${data.displayName} joined the game!` );
+				channel.send(`> ${data.displayName} joined the game!`);
 			});
 		});
 
 		server.on('player-quit', function (data) {
 			client.channels.fetch(cfg.channel).then(function (channel) {
-				channel.send(`> ${data.displayName} left the game!` );
+				channel.send(`> ${data.displayName} left the game!`);
 			});
 		});
 

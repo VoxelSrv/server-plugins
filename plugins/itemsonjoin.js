@@ -4,8 +4,10 @@ module.exports = function (server) {
 
 class Plugin {
 	name = 'ItemsOnJoin';
-	version = '0.0.3';
-	supported = '>=0.2.0-alpha.9';
+	version = '0.0.4';
+	game = 'voxelsrv';
+	supportedGameAPI = '>=0.2.0-alpha.17';
+	supportedAPI = '*';
 
 	constructor(server) {
 		server.on('player-created', function (player) {

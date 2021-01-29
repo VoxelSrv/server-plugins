@@ -1,17 +1,17 @@
 import { ChatComponent } from 'voxelsrv-server/dist/lib/chat';
-import { Command, ItemTool, Registry } from 'voxelsrv-server/dist/lib/registry';
+import { Command, ItemTool } from 'voxelsrv-server/dist/lib/registry';
 import type { Server } from 'voxelsrv-server/dist/server';
-import type { Player } from 'voxelsrv-server/dist/lib/player';
+import type { Player } from 'voxelsrv-server/dist/lib/player/player';
 
 import { API } from './api';
 import { ICorePlugin } from 'voxelservercore/interfaces/plugin';
 
 export class Plugin implements ICorePlugin {
 	name = 'WorldEdit';
-	version = '0.0.4';
-	supportedGameAPI = '>=0.2.0-beta.17';
+	version = '0.0.5';
+	supportedGameAPI = '>=0.2.0-beta.19';
 	game = 'voxelsrv';
-	supportedAPI = '0.1.6';
+	supportedAPI = '0.2.1';
 	api: API;
 	getAPI() {
 		return this.api;

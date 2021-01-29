@@ -9,9 +9,9 @@
   "author": "Patbox <patbox4@outlook.com> (https://pb4.eu)",
   "license": "ISC",
   "dependencies": {
-    "voxelservercore": "^0.1.6",
-    "voxelsrv-server": "^0.2.0-beta.17",
-    "vsrv-discord-plugin": "file:discord",
+    "voxelservercore": "^0.2.1",
+    "voxelsrv-server": "github:VoxelSrv/voxelsrv-server",
+    "vscore-discord-plugin": "file:discord",
     "vsrv-worldedit-plugin": "file:worldedit"
   },
   "devDependencies": {

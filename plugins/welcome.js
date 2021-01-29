@@ -4,10 +4,10 @@ module.exports = function (server) {
 
 class Plugin {
 	name = 'Welcome';
-	version = '0.0.4';
+	version = '0.0.5';
 	game = '*';
 	supportedGameAPI = '*';
-	supportedAPI = '0.1.6';
+	supportedAPI = '>=0.2.1';
 
 	constructor(server) {
 		const load = { text: ['Hello there!'], ...server.loadConfig('', 'welcome') };

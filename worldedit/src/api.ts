@@ -1,6 +1,6 @@
 import type { Server } from 'voxelsrv-server/dist/server';
 import type { Block, Registry } from 'voxelsrv-server/dist/lib/registry';
-import type { World } from 'voxelsrv-server/dist/lib/worlds';
+import type { World } from 'voxelsrv-server/dist/lib/world/world';
 
 import { XYZ } from 'voxelsrv-server/src/types';
 
@@ -72,7 +72,7 @@ export class API {
 				for (var y = y1; y <= y2; y++) {
 					for (var z = z1; z <= z2; z++) {
 						const xyz: XYZ = [x, y, z];
-						if (!oObj[world.getBlock(xyz, false).numId]) continue;
+						if (!oObj[world.getBlockSync(xyz, false).numId]) continue;
 						const b = getBlock();
 						world.setBlock(xyz, b.numId, false);
 						this._server.players.sendPacketAll('WorldBlockUpdate', { x, y, z, id: b.numId });
@@ -85,7 +85,7 @@ export class API {
 				for (var y = y1; y <= y2; y++) {
 					for (var z = z1; z <= z2; z++) {
 						const xyz: XYZ = [x, y, z];
-						if (world.getBlock(xyz, false).numId != o) continue;
+						if (world.getBlockSync(xyz, false).numId != o) continue;
 						const b = getBlock();
 						this._server.players.sendPacketAll('WorldBlockUpdate', { x, y, z, id: b.numId });
 						world.setBlock(xyz, b.numId, false);

@@ -44,10 +44,10 @@ var Plugin = /** @class */ (function () {
     function Plugin(server) {
         var _this = this;
         this.name = 'WorldEdit';
-        this.version = '0.0.4';
-        this.supportedGameAPI = '>=0.2.0-beta.17';
+        this.version = '0.0.5';
+        this.supportedGameAPI = '>=0.2.0-beta.19';
         this.game = 'voxelsrv';
-        this.supportedAPI = '0.1.6';
+        this.supportedAPI = '0.2.1';
         var storage = {};
         this.api = new api_1.API(server);
         server.on('registry-define', function () {

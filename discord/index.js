@@ -8,10 +8,10 @@ module.exports = function (server) {
 
 class Plugin {
 	name = 'Discord';
-	version = '0.0.6';
+	version = '0.0.7';
 	game = '*';
 	supportedGameAPI = '*';
-	supportedAPI = '0.1.6';
+	supportedAPI = '0.2.1';
 	constructor(server) {
 		const client = new Discord.Client();
 
@@ -38,7 +38,7 @@ class Plugin {
 		});
 
 		server.on('chat-message', function (data) {
-			const text = api.MessageStringify(data);
+			const text = api.MessageStringify(data.getOutput());
 			client.channels.fetch(cfg.channel).then(function (channel) {
 				channel.send(text);
 			});

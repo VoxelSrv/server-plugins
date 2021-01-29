@@ -63,7 +63,7 @@ var API = /** @class */ (function () {
                 for (var y = y1; y <= y2; y++) {
                     for (var z = z1; z <= z2; z++) {
                         var xyz = [x, y, z];
-                        if (!oObj_1[world.getBlock(xyz, false).numId])
+                        if (!oObj_1[world.getBlockSync(xyz, false).numId])
                             continue;
                         var b = getBlock();
                         world.setBlock(xyz, b.numId, false);
@@ -78,7 +78,7 @@ var API = /** @class */ (function () {
                 for (var y = y1; y <= y2; y++) {
                     for (var z = z1; z <= z2; z++) {
                         var xyz = [x, y, z];
-                        if (world.getBlock(xyz, false).numId != o)
+                        if (world.getBlockSync(xyz, false).numId != o)
                             continue;
                         var b = getBlock();
                         this._server.players.sendPacketAll('WorldBlockUpdate', { x: x, y: y, z: z, id: b.numId });
